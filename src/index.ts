@@ -4,65 +4,29 @@ import { merge } from 'lodash';
 import { HttpLink } from 'apollo-link-http';
 import fetch from 'node-fetch';
 
+import * as scalars from './core/scalars';
 import * as accounts from './modules/accounts';
 import * as customers from './modules/customers';
 import * as loans from './modules/loans';
 
 
-const modules = [accounts, customers, loans];
+const modules = [scalars]; //, accounts, customers, loans];
 
 const rootTypeDefs = `
-extend type Query {
-    newQuery: [String]!
-    account(id: ID): Account
-}
-extend type Account {
-    rating: Float!
-    musicChannels(filter: String): [Channel]
+type Query {
+    hello: JSON
 }
 `;
 
-const resolvers = {
-    Query: {
-        newQuery: () => ['1', '2', '3'],
-        account: (obj, { id }) => ({})
-    },
-    Account: {
-        rating: () => Math.random(),
-        musicChannels: (obj, { filter }, context, info) => [
-            {
-                "id": 2,
-                "name": "HITS" + obj.id + ' ' + filter
-            },
-            {
-                "id": 10,
-                "name": "NOSTALGIA"
-            },
-            {
-                "id": 24,
-                "name": "Bossa Nova"
-            },
-            {
-                "id": 25,
-                "name": "Chiptunes"
-            },
-            {
-                "id": 29,
-                "name": "Classic Rap"
-            }
-        ]
-    }
-}
-
-
-const typeDefs = rootTypeDefs  //+ modules.map(x => x.typeDefs).join();
-// const resolvers = modules.map(x => x.resolvers).reduce(merge);
+const typeDefs = rootTypeDefs + modules.map(x => x.typeDefs).join();
+const resolvers = modules.map(x => x.resolvers).reduce(merge);
 
 
 
 async function run() {
     const mainSchema = await getRemoteSchema('https://protected-shore-54986.herokuapp.com/');
     const jokSchema = await getRemoteSchema('http://graph.jok.io/graphql');
+    const someLocalSchema = await getRemoteSchema('http://localhost:3000/graphql');
 
     const mergedSchemas = mergeSchemas({
         schemas: [mainSchema, jokSchema, typeDefs],
