@@ -42,19 +42,19 @@ async function run() {
         pubsub
     }
 
-    const engine = new Engine({
-        engineConfig: { apiKey: process.env.APOLLO_ENGINE_KEY || 'service:playerx-747:qh9bULYm5hNnMODRcw46Rw' },
-        endpoint: '/',
-        graphqlPort: parseInt(process.env.Port, 10) || 4000,
-    })
-    engine.start();
-
     const server = new GraphQLServer({
         schema, context, options: {
             tracing: true,
             disablePlayground: true
         }
     });
+
+    const engine = new Engine({
+        engineConfig: { apiKey: process.env.APOLLO_ENGINE_KEY || 'service:playerx-747:qh9bULYm5hNnMODRcw46Rw' },
+        endpoint: '/',
+        graphqlPort: parseInt(process.env.Port, 10) || 4000,
+    })
+    engine.start();
 
     server.express.use(engine.expressMiddleware());
     server.express.get('*', graphiqlExpress({ endpointURL: '/', subscriptionsEndpoint: 'ws://localhost:4000/' }))
