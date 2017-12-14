@@ -10,30 +10,36 @@ import * as customers from './modules/customers';
 import * as loans from './modules/loans';
 
 
-const modules = [scalars]; //, accounts, customers, loans];
+const modules = [scalars, accounts, customers, loans];
 
 const rootTypeDefs = `
 type Query {
-    hello: JSON
+    hello: String
 }
+
+    type Subscription {
+        counter: String!
+    }
 `;
 
 const typeDefs = rootTypeDefs + modules.map(x => x.typeDefs).join();
 const resolvers = modules.map(x => x.resolvers).reduce(merge);
 
-
-
 async function run() {
-    const mainSchema = await getRemoteSchema('https://protected-shore-54986.herokuapp.com/');
-    const jokSchema = await getRemoteSchema('http://graph.jok.io/graphql');
-    const someLocalSchema = await getRemoteSchema('http://localhost:3000/graphql');
+    // const mainSchema = await getRemoteSchema('https://protected-shore-54986.herokuapp.com/');
+    // const jokSchema = await getRemoteSchema('http://graph.jok.io/graphql');
+    const pubsub = new PubSub()
 
-    const mergedSchemas = mergeSchemas({
-        schemas: [mainSchema, jokSchema, typeDefs],
+    const schema = mergeSchemas({
+        schemas: [typeDefs],
         resolvers: resolvers
     })
 
-    const server = new GraphQLServer({ schema: mergedSchemas })
+    const context = {
+        pubsub
+    }
+
+    const server = new GraphQLServer({ schema, context })
     server.start(() => console.log('Server is running on localhost:4000'))
 }
 
