@@ -2,6 +2,9 @@ import { GraphQLServer, PubSub } from 'graphql-yoga';
 import { introspectSchema, mergeSchemas, makeRemoteExecutableSchema } from 'graphql-tools';
 import { merge } from 'lodash';
 import { HttpLink } from 'apollo-link-http';
+import { Engine } from 'apollo-engine';
+import { graphiqlExpress } from 'apollo-server-express';
+
 import fetch from 'node-fetch';
 
 import * as scalars from './core/scalars';
@@ -13,12 +16,12 @@ import * as loans from './modules/loans';
 const modules = [scalars, accounts, customers, loans];
 
 const rootTypeDefs = `
-type Query {
-    hello: String
-}
+    type Query {
+        hello: String
+    }
 
     type Subscription {
-        counter: String!
+        counter: String
     }
 `;
 
@@ -28,19 +31,34 @@ const resolvers = modules.map(x => x.resolvers).reduce(merge);
 async function run() {
     // const mainSchema = await getRemoteSchema('https://protected-shore-54986.herokuapp.com/');
     // const jokSchema = await getRemoteSchema('http://graph.jok.io/graphql');
-    const pubsub = new PubSub()
 
     const schema = mergeSchemas({
         schemas: [typeDefs],
         resolvers: resolvers
-    })
+    });
 
+    const pubsub = new PubSub();
     const context = {
         pubsub
     }
 
-    const server = new GraphQLServer({ schema, context })
-    server.start(() => console.log('Server is running on localhost:4000'))
+    const engine = new Engine({
+        engineConfig: { apiKey: process.env.APOLLO_ENGINE_KEY || 'service:playerx-747:qh9bULYm5hNnMODRcw46Rw' },
+        endpoint: '/',
+        graphqlPort: parseInt(process.env.Port, 10) || 4000,
+    })
+    engine.start();
+
+    const server = new GraphQLServer({
+        schema, context, options: {
+            tracing: true,
+            disablePlayground: true
+        }
+    });
+
+    server.express.use(engine.expressMiddleware());
+    server.express.get('*', graphiqlExpress({ endpointURL: '/', subscriptionsEndpoint: 'ws://localhost:4000/' }))
+    server.start(() => console.log('Server is running on localhost:4000'));
 }
 
 

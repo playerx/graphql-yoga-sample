@@ -20,9 +20,10 @@ export const resolvers = {
     Subscription: {
         counter: {
             subscribe: (parent, args, { pubsub }) => {
+                console.log('aa')
                 const channel = Math.random().toString(36).substring(2, 15) // random channel name
                 let count = 0
-                setInterval(() => pubsub.publish(channel, { counter: (count++).toString() }), 2000)
+                setInterval(() => pubsub.publish(channel, { counter: "EZ" }), 2000)
                 return pubsub.asyncIterator(channel)
             },
         }
