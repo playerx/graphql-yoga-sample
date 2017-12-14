@@ -56,13 +56,13 @@ async function run() {
     })
     engine.start();
 
+    server.express.get('/', graphiqlExpress({ endpointURL: '/', subscriptionsEndpoint: 'ws://localhost:4000/' }))
     server.express.use(engine.expressMiddleware());
-    server.express.get('*', graphiqlExpress({ endpointURL: '/', subscriptionsEndpoint: 'ws://localhost:4000/' }))
     server.start(() => console.log('Server is running on localhost:4000'));
 }
 
 
-async function getRemoteSchema(uri) {
+export async function getRemoteSchema(uri) {
     const link = new HttpLink({ uri, fetch })
     const introspectionSchema = await introspectSchema(link);
     const graphcoolSchema = makeRemoteExecutableSchema({
